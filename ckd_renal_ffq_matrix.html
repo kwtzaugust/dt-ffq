@@ -1,0 +1,2075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CKD Renal FFQ Matrix — Phosphate · Potassium · Sodium</title>
+  <!-- Load Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* =========================================================================
+       1. DESIGN TOKENS & RESET (SELF-CONTAINED, ZERO EXTERNAL CSS DEPENDENCY)
+       ========================================================================= */
+    :root {
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F1F5F9;
+      --border-light: #E2E8F0;
+      --border-med: #CBD5E1;
+      --text-primary: #0F172A;
+      --text-secondary: #334155;
+      --text-muted: #64748B;
+      --text-faint: #94A3B8;
+
+      /* Mineral Colors */
+      --po4-bg: #EEF2FF;
+      --po4-border: #C7D2FE;
+      --po4-text: #3730A3;
+      --po4-accent: #4F46E5;
+
+      --k-bg: #ECFDF5;
+      --k-border: #A7F3D0;
+      --k-text: #065F46;
+      --k-accent: #059669;
+
+      --na-bg: #FFFBEB;
+      --na-border: #FDE68A;
+      --na-text: #92400E;
+      --na-accent: #D97706;
+
+      --overlap-bg: #F5F3FF;
+      --overlap-border: #DDD6FE;
+      --overlap-text: #5B21B6;
+      --overlap-accent: #7C3AED;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input {
+      font-family: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* =========================================================================
+       2. LAYOUT & STICKY TOP HEADER
+       ========================================================================= */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-light);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+
+    .container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    @media (min-width: 640px) {
+      .container {
+        padding: 0 24px;
+      }
+    }
+
+    .header-inner {
+      padding-top: 14px;
+      padding-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .header-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: var(--text-primary);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+    }
+
+    .brand-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title {
+      font-size: 1.125rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .badge-tag {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border-light);
+    }
+
+    .mineral-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot-po4 { background: var(--po4-accent); }
+    .dot-k { background: var(--k-accent); }
+    .dot-na { background: var(--na-accent); }
+    .dot-overlap { background: var(--overlap-accent); }
+
+    /* Segmented View Toggle */
+    .segmented-control {
+      display: inline-flex;
+      padding: 4px;
+      border-radius: 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      align-self: flex-start;
+    }
+
+    @media (min-width: 768px) {
+      .segmented-control {
+        align-self: auto;
+      }
+    }
+
+    .seg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      transition: all 0.16s ease;
+    }
+
+    .seg-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .seg-btn.active {
+      background: #FFFFFF;
+      color: var(--text-primary);
+      border-color: var(--border-light);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    /* =========================================================================
+       3. MAIN WORKSPACE & QUICK STRIP
+       ========================================================================= */
+    main {
+      flex: 1;
+      padding-top: 20px;
+      padding-bottom: 36px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    @media (min-width: 640px) {
+      .quick-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .quick-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .quick-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .pill-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .pill-po4 { background: var(--po4-bg); color: var(--po4-text); border-color: var(--po4-border); }
+    .pill-k { background: var(--k-bg); color: var(--k-text); border-color: var(--k-border); }
+    .pill-na { background: var(--na-bg); color: var(--na-text); border-color: var(--na-border); }
+    .pill-overlap { background: var(--overlap-bg); color: var(--overlap-text); border-color: var(--overlap-border); }
+
+    .quick-card-body {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .quick-card-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* =========================================================================
+       4. CONTROL PANEL (SPINES, SEARCH, FILTERS, BLUR MODE)
+       ========================================================================= */
+    .control-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+      margin-bottom: 14px;
+    }
+
+    @media (min-width: 640px) {
+      .control-card {
+        padding: 18px 20px;
+      }
+    }
+
+    .control-top {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--bg-subtle);
+    }
+
+    @media (min-width: 1024px) {
+      .control-top {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .section-eyebrow {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .spine-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .spine-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .spine-btn {
+      text-align: left;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      color: var(--text-secondary);
+      transition: all 0.16s ease;
+    }
+
+    .spine-btn:hover {
+      background: var(--bg-page);
+      border-color: var(--border-med);
+    }
+
+    .spine-btn.active {
+      background: var(--text-primary);
+      color: #FFFFFF;
+      border-color: var(--text-primary);
+      box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12);
+    }
+
+    .spine-btn-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .spine-tag {
+      font-size: 0.625rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+    }
+
+    .spine-btn.active .spine-tag {
+      background: rgba(255, 255, 255, 0.16);
+      color: #FFFFFF;
+    }
+
+    .spine-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .spine-btn.active .spine-sub {
+      color: #CBD5E1;
+    }
+
+    /* Study / Blur Toggle */
+    .quiz-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    @media (min-width: 1024px) {
+      .quiz-controls {
+        align-items: flex-end;
+      }
+    }
+
+    .quiz-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 15px;
+      border-radius: 12px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-page);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.16s ease;
+    }
+
+    .quiz-btn:hover {
+      background: var(--bg-subtle);
+    }
+
+    .quiz-btn.active {
+      background: var(--po4-accent);
+      color: #FFFFFF;
+      border-color: var(--po4-accent);
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.22);
+    }
+
+    .quiz-hint {
+      font-size: 0.6875rem;
+      color: var(--text-faint);
+    }
+
+    /* Search & Filter Row */
+    .control-bottom {
+      padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .control-bottom {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-faint);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 34px 9px 36px;
+      border-radius: 11px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      transition: all 0.16s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      background: #FFFFFF;
+      border-color: var(--po4-accent);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-faint);
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-clear:hover {
+      color: var(--text-primary);
+      background: var(--bg-subtle);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filter-pill {
+      padding: 6px 12px;
+      border-radius: 9px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      background: var(--bg-page);
+    }
+
+    .filter-pill.pill-filter-po4 { color: var(--po4-text); border-color: var(--po4-border); }
+    .filter-pill.pill-filter-k { color: var(--k-text); border-color: var(--k-border); }
+    .filter-pill.pill-filter-na { color: var(--na-text); border-color: var(--na-border); }
+    .filter-pill.pill-filter-overlap { color: var(--overlap-text); border-color: var(--overlap-border); }
+
+    .filter-pill.active-ALL { background: var(--text-primary); color: #FFFFFF; border-color: var(--text-primary); }
+    .filter-pill.active-PO4 { background: var(--po4-accent); color: #FFFFFF; border-color: var(--po4-accent); }
+    .filter-pill.active-K { background: var(--k-accent); color: #FFFFFF; border-color: var(--k-accent); }
+    .filter-pill.active-NA { background: var(--na-accent); color: #FFFFFF; border-color: var(--na-accent); }
+    .filter-pill.active-OVERLAP { background: var(--overlap-accent); color: #FFFFFF; border-color: var(--overlap-accent); }
+
+    /* =========================================================================
+       5. TABLE & SUBSECTION BLOCK STYLING (CRITICAL NEWLINE FORMATTING)
+       ========================================================================= */
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 4px 10px 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .tier-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tier-badge {
+      display: inline-block;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      margin-right: 4px;
+      vertical-align: baseline;
+    }
+
+    .tier-high { background: #FFF1F2; color: #BE123C; border-color: #FECDD3; }
+    .tier-med { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+    .tier-low { background: #F0FDFA; color: #0F766E; border-color: #CCFBF1; }
+    .tier-neutral { background: var(--bg-subtle); color: var(--text-secondary); border-color: var(--border-light); }
+
+    .table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+    }
+
+    .table-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-scroll::-webkit-scrollbar-track {
+      background: var(--bg-subtle);
+    }
+
+    .table-scroll::-webkit-scrollbar-thumb {
+      background: var(--border-med);
+      border-radius: 9999px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+      text-align: left;
+    }
+
+    thead tr {
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg-page);
+    }
+
+    th {
+      padding: 13px 16px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-right: 1px solid var(--border-light);
+    }
+
+    th:last-child {
+      border-right: none;
+    }
+
+    th.col-cat { width: 21%; color: var(--text-secondary); }
+    th.col-po4 { width: 26%; color: var(--po4-text); background: rgba(238, 242, 255, 0.65); }
+    th.col-k { width: 31%; color: var(--k-text); background: rgba(236, 253, 245, 0.65); }
+    th.col-na { width: 22%; color: var(--na-text); background: rgba(255, 251, 235, 0.65); }
+
+    .th-inner {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-light);
+      transition: background-color 0.14s ease;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background-color: rgba(248, 250, 252, 0.85);
+    }
+
+    td {
+      padding: 14px 16px;
+      vertical-align: top;
+      border-right: 1px solid var(--border-light);
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    td:last-child {
+      border-right: none;
+    }
+
+    td.cell-cat {
+      background: rgba(248, 250, 252, 0.45);
+    }
+
+    td.cell-empty {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .cat-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 0.825rem;
+    }
+
+    .cat-sub {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .cat-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .mini-pill {
+      font-size: 0.625rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+    }
+
+    /* CRITICAL: Each subsection inside a cell is a dedicated block on a new line */
+    .cell-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .sub-line {
+      display: block;
+      width: 100%;
+    }
+
+    .sub-line + .sub-line {
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-light);
+    }
+
+    .sub-label {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .empty-dash {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      color: var(--text-faint);
+      font-weight: 600;
+      user-select: none;
+    }
+
+    mark {
+      background: #FEF08A;
+      color: var(--text-primary);
+      padding: 0 2px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* Study / Blur Mode */
+    .quiz-mode .quiz-target {
+      filter: blur(5.5px);
+      user-select: none;
+      cursor: pointer;
+      transition: filter 0.2s ease;
+      border-radius: 6px;
+    }
+
+    .quiz-mode .quiz-target:hover,
+    .quiz-mode .quiz-target.revealed {
+      filter: blur(0);
+      user-select: text;
+    }
+
+    /* Empty Search State */
+    .empty-state {
+      padding: 44px 20px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg-subtle);
+      color: var(--text-faint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px auto;
+    }
+
+    .empty-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .empty-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .btn-reset {
+      margin-top: 12px;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: none;
+      background: var(--text-primary);
+      color: #FFFFFF;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* =========================================================================
+       6. SUMMARY VENN DIAGRAM VIEW
+       ========================================================================= */
+    .venn-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (min-width: 1024px) {
+      .venn-layout {
+        grid-template-columns: 7fr 5fr;
+      }
+    }
+
+    .venn-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+
+    @media (min-width: 640px) {
+      .venn-panel {
+        padding: 22px;
+      }
+    }
+
+    .venn-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .venn-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .venn-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .svg-frame {
+      width: 100%;
+      border-radius: 14px;
+      background: var(--bg-page);
+      border: 1px solid var(--border-light);
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    .svg-frame svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      user-select: none;
+    }
+
+    .venn-region-group {
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .venn-circle {
+      transition: fill-opacity 0.2s ease;
+    }
+
+    .venn-cards-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 10px 4px;
+    }
+
+    .venn-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .venn-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 13px;
+      padding: 13px 15px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    }
+
+    .venn-card:hover {
+      border-color: var(--border-med);
+    }
+
+    .venn-card.selected {
+      border-color: var(--text-primary);
+      box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
+      background: rgba(248, 250, 252, 0.8);
+    }
+
+    .venn-card.dimmed {
+      opacity: 0.42;
+    }
+
+    .venn-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .venn-region-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .venn-count {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-faint);
+    }
+
+    .kw-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .kw-chip {
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-light);
+      margin-top: auto;
+    }
+
+    .footer-inner {
+      padding-top: 14px;
+      padding-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    @media (min-width: 640px) {
+      .footer-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =======================================================================
+       STICKY TOP HEADER
+       ======================================================================= -->
+  <header class="top-header">
+    <div class="container header-inner">
+      <div class="brand-group">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="3" y1="15" x2="21" y2="15" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+            <line x1="15" y1="3" x2="15" y2="21" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">CKD Renal FFQ Matrix</h1>
+            <span class="badge-tag">SG Clinical Dietetics</span>
+          </div>
+          <div class="mineral-legend">
+            <span class="legend-item" style="color: var(--po4-accent);"><span class="dot dot-po4"></span>Phosphate (PO₄)</span>
+            <span style="color: var(--border-med);">·</span>
+            <span class="legend-item" style="color: var(--k-accent);"><span class="dot dot-k"></span>Potassium (K⁺)</span>
+            <span style="color: var(--border-med);">·</span>
+            <span class="legend-item" style="color: var(--na-accent);"><span class="dot dot-na"></span>Sodium (Na⁺)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary View Segmented Toggle -->
+      <div class="segmented-control" role="tablist" aria-label="View Mode">
+        <button type="button" id="btn-view-table" class="seg-btn active" onclick="switchMainView('table')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--po4-accent);">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="3" y1="15" x2="21" y2="15" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+            <line x1="15" y1="3" x2="15" y2="21" />
+          </svg>
+          Tabular Detail View
+        </button>
+        <button type="button" id="btn-view-venn" class="seg-btn" onclick="switchMainView('venn')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--k-accent);">
+            <circle cx="9" cy="10" r="6" />
+            <circle cx="15" cy="10" r="6" />
+            <circle cx="12" cy="15" r="6" />
+          </svg>
+          Summary Venn Diagram View
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =======================================================================
+       MAIN WORKSPACE
+       ======================================================================= -->
+  <main class="container">
+
+    <!-- Quick Reference Strip (Pure Names Only) -->
+    <section class="quick-grid" aria-label="Electrolyte Summary">
+      <div class="quick-card">
+        <span class="pill-badge pill-po4">PO₄</span>
+        <div class="quick-card-body">
+          <span class="quick-card-title">Phosphate (PO₄)</span>
+          Dairy, Soy, Legumes, Nuts, Organ Meats, Edible Bones, Cola, Malted Drinks, Chocolate, Wholegrains
+        </div>
+      </div>
+      <div class="quick-card">
+        <span class="pill-badge pill-k">K⁺</span>
+        <div class="quick-card-body">
+          <span class="quick-card-title">Potassium (K⁺)</span>
+          High-K Fruits, High-K Vegetables, Legumes, Nuts, Juices, Coconut Water, Broths, Salt Substitutes, TCM
+        </div>
+      </div>
+      <div class="quick-card">
+        <span class="pill-badge pill-na">Na⁺</span>
+        <div class="quick-card-body">
+          <span class="quick-card-title">Sodium (Na⁺)</span>
+          Sauces, Seasonings, Broths, Processed Meats, Surimi, Hawker Noodles, Instant Noodles, Pickled &amp; Canned Foods
+        </div>
+      </div>
+      <div class="quick-card">
+        <span class="pill-badge pill-overlap">ALL 3</span>
+        <div class="quick-card-body">
+          <span class="quick-card-title">Triple Overlap</span>
+          Ikan bilis, Steamboat broth
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         VIEW 1: TABULAR DETAIL VIEW
+         ===================================================================== -->
+    <section id="view-table">
+      <div class="control-card">
+        <!-- Spine Selector + Study/Blur Toggle -->
+        <div class="control-top">
+          <div style="flex: 1;">
+            <span class="section-eyebrow">Organising Table Spine</span>
+            <div class="spine-grid" role="group" aria-label="Spine Variant Selector">
+              <button type="button" id="spine-btn-A" class="spine-btn active" onclick="selectSpine('A')">
+                <div class="spine-btn-head">
+                  <span>Variant A · 14-Row Union</span>
+                  <span class="spine-tag">Master</span>
+                </div>
+                <div class="spine-sub">10 PO₄ groups + 4 K⁺/Na⁺ rows</div>
+              </button>
+
+              <button type="button" id="spine-btn-B" class="spine-btn" onclick="selectSpine('B')">
+                <div class="spine-btn-head">
+                  <span>Variant B · 6-Row Meal Flow</span>
+                  <span class="spine-tag">Clinic</span>
+                </div>
+                <div class="spine-sub">Sequential meal-time order</div>
+              </button>
+
+              <button type="button" id="spine-btn-C" class="spine-btn" onclick="selectSpine('C')">
+                <div class="spine-btn-head">
+                  <span>Variant C · 3-Tier Mechanism</span>
+                  <span class="spine-tag">Exam</span>
+                </div>
+                <div class="spine-sub">Whole → Extracted → Additives</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-controls">
+            <button type="button" id="btn-quiz-toggle" class="quiz-btn" onclick="toggleQuizMode()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span id="quiz-label">Study / Blur Mode: OFF</span>
+            </button>
+            <span id="quiz-hint" class="quiz-hint">Blur cells to actively recall items</span>
+          </div>
+        </div>
+
+        <!-- Search + Filter Pills -->
+        <div class="control-bottom">
+          <div class="search-box">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="search-input"
+              type="text"
+              class="search-input"
+              oninput="handleSearch(this.value)"
+              placeholder="Search food item (e.g. ikan bilis, milo, spinach, mee sua)..."
+            />
+            <button id="btn-clear-search" type="button" class="search-clear hidden" onclick="clearSearch()" aria-label="Clear search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="filter-group" role="group" aria-label="Mineral Filters">
+            <button type="button" id="filter-ALL" class="filter-pill active-ALL" onclick="setFilter('ALL')">All</button>
+            <button type="button" id="filter-PO4" class="filter-pill pill-filter-po4" onclick="setFilter('PO4')">Phosphate</button>
+            <button type="button" id="filter-K" class="filter-pill pill-filter-k" onclick="setFilter('K')">Potassium</button>
+            <button type="button" id="filter-NA" class="filter-pill pill-filter-na" onclick="setFilter('NA')">Sodium</button>
+            <button type="button" id="filter-OVERLAP" class="filter-pill pill-filter-overlap" onclick="setFilter('OVERLAP')">Shared Overlaps</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div id="table-summary-text">
+          Showing <strong style="color: var(--text-primary);">14</strong> rows in <strong style="color: var(--text-primary);">Variant A · 14-Row Union Spine</strong>
+        </div>
+        <div class="tier-legend">
+          <span class="tier-badge tier-high">High K</span>
+          <span class="tier-badge tier-med">Med K</span>
+          <span class="tier-badge tier-low">Low K</span>
+        </div>
+      </div>
+
+      <!-- Responsive Matrix Table -->
+      <div class="table-wrapper">
+        <div class="table-scroll">
+          <table id="ffq-table">
+            <thead>
+              <tr>
+                <th class="col-cat">Food Category / Spine</th>
+                <th class="col-po4">
+                  <div class="th-inner">
+                    <span class="dot dot-po4"></span>
+                    <span>Phosphate (PO₄)</span>
+                  </div>
+                </th>
+                <th class="col-k">
+                  <div class="th-inner">
+                    <span class="dot dot-k"></span>
+                    <span>Potassium (K⁺)</span>
+                  </div>
+                </th>
+                <th class="col-na">
+                  <div class="th-inner">
+                    <span class="dot dot-na"></span>
+                    <span>Sodium (Na⁺)</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="ffq-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="empty-state" class="empty-state hidden">
+          <div class="empty-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <div class="empty-title">No matching FFQ items found</div>
+          <div class="empty-desc">Try clearing your search query or switching back to "All".</div>
+          <button type="button" class="btn-reset" onclick="resetFilters()">Reset Search &amp; Filters</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         VIEW 2: SUMMARY VENN DIAGRAM VIEW
+         ===================================================================== -->
+    <section id="view-venn" class="hidden">
+      <div class="venn-layout">
+        <!-- SVG Interactive Venn -->
+        <div class="venn-panel">
+          <div class="venn-header">
+            <div>
+              <h2 class="venn-title">Electrolyte Overlap Venn Diagram</h2>
+              <p class="venn-subtitle">Click or hover any circle or intersection to highlight keywords</p>
+            </div>
+            <button type="button" class="filter-pill" onclick="selectVennRegion('ALL')">Show All 7 Regions</button>
+          </div>
+
+          <div class="svg-frame">
+            <svg viewBox="0 0 820 650" role="img" aria-label="3-Circle Venn Diagram for Phosphate, Potassium, and Sodium">
+              <defs>
+                <filter id="vennShadow" x="-10%" y="-10%" width="120%" height="120%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.06" />
+                </filter>
+              </defs>
+
+              <!-- Base Circles -->
+              <circle id="circle-PO4" cx="305" cy="245" r="205" fill="#4F46E5" fill-opacity="0.14" stroke="#4F46E5" stroke-width="3" class="venn-circle" filter="url(#vennShadow)" />
+              <circle id="circle-K" cx="515" cy="245" r="205" fill="#059669" fill-opacity="0.14" stroke="#059669" stroke-width="3" class="venn-circle" filter="url(#vennShadow)" />
+              <circle id="circle-NA" cx="410" cy="415" r="205" fill="#D97706" fill-opacity="0.14" stroke="#D97706" stroke-width="3" class="venn-circle" filter="url(#vennShadow)" />
+
+              <!-- Outer Labels -->
+              <text x="200" y="72" text-anchor="middle" fill="#3730A3" font-size="16" font-weight="800" letter-spacing="0.04em">PHOSPHATE (PO₄)</text>
+              <text x="620" y="72" text-anchor="middle" fill="#065F46" font-size="16" font-weight="800" letter-spacing="0.04em">POTASSIUM (K⁺)</text>
+              <text x="410" y="605" text-anchor="middle" fill="#92400E" font-size="16" font-weight="800" letter-spacing="0.04em">SODIUM (Na⁺)</text>
+
+              <!-- Region 1: PO4 Only -->
+              <g id="svg-region-PO4_ONLY" class="venn-region-group" onclick="selectVennRegion('PO4_ONLY')" onmouseenter="hoverVennRegion('PO4_ONLY')" onmouseleave="hoverVennRegion(null)">
+                <rect x="115" y="116" width="175" height="205" rx="12" fill="transparent" />
+                <text x="195" y="135" text-anchor="middle" fill="#312E81" font-size="11.5" font-weight="700">
+                  <tspan x="195" dy="0">Dairy, 3-in-1 Drinks</tspan>
+                  <tspan x="195" dy="18">Creamer, Soymilk</tspan>
+                  <tspan x="195" dy="18">Tofu, Tau Kwa</tspan>
+                  <tspan x="195" dy="18">Organ Meats, Kway Chap</tspan>
+                  <tspan x="195" dy="18">Edible Bones, Sardines</tspan>
+                  <tspan x="195" dy="18">Cola, Horlicks</tspan>
+                  <tspan x="195" dy="18">Oats, Brown Rice</tspan>
+                  <tspan x="195" dy="18">Wholemeal</tspan>
+                </text>
+              </g>
+
+              <!-- Region 2: K+ Only -->
+              <g id="svg-region-K_ONLY" class="venn-region-group" onclick="selectVennRegion('K_ONLY')" onmouseenter="hoverVennRegion('K_ONLY')" onmouseleave="hoverVennRegion(null)">
+                <rect x="530" y="116" width="175" height="205" rx="12" fill="transparent" />
+                <text x="622" y="135" text-anchor="middle" fill="#064E3B" font-size="11.5" font-weight="700">
+                  <tspan x="622" dy="0">High-K Fruits</tspan>
+                  <tspan x="622" dy="18">Dried Fruits, Dates</tspan>
+                  <tspan x="622" dy="18">High-K Vegetables</tspan>
+                  <tspan x="622" dy="18">Tubers, Spinach</tspan>
+                  <tspan x="622" dy="18">Juices, Coconut Water</tspan>
+                  <tspan x="622" dy="18">Chng Tng, Bubur Cha Cha</tspan>
+                  <tspan x="622" dy="18">TCM, Red Dates</tspan>
+                  <tspan x="622" dy="18">Wolfberries</tspan>
+                </text>
+              </g>
+
+              <!-- Region 3: Na+ Only -->
+              <g id="svg-region-NA_ONLY" class="venn-region-group" onclick="selectVennRegion('NA_ONLY')" onmouseenter="hoverVennRegion('NA_ONLY')" onmouseleave="hoverVennRegion(null)">
+                <rect x="285" y="452" width="250" height="125" rx="12" fill="transparent" />
+                <text x="410" y="472" text-anchor="middle" fill="#78350F" font-size="11.5" font-weight="700">
+                  <tspan x="410" dy="0">Soy Sauce, Oyster Sauce</tspan>
+                  <tspan x="410" dy="18">Chilli Sauce, Tomato Sauce, Chicken Cubes</tspan>
+                  <tspan x="410" dy="18">Mee Sua, Yellow Mee, Mee Pok, Mee Kia</tspan>
+                  <tspan x="410" dy="18">Instant Noodles, Pickled Veg, Canned Veg</tspan>
+                </text>
+              </g>
+
+              <!-- Region 4: PO4 ∩ K+ -->
+              <g id="svg-region-PO4_K" class="venn-region-group" onclick="selectVennRegion('PO4_K')" onmouseenter="hoverVennRegion('PO4_K')" onmouseleave="hoverVennRegion(null)">
+                <rect x="342" y="115" width="136" height="118" rx="12" fill="transparent" />
+                <text x="410" y="135" text-anchor="middle" fill="#0F766E" font-size="11" font-weight="700">
+                  <tspan x="410" dy="0">Legumes, Dhal</tspan>
+                  <tspan x="410" dy="16">Nuts &amp; Seeds</tspan>
+                  <tspan x="410" dy="16">Milo, Ovaltine</tspan>
+                  <tspan x="410" dy="16">Cocoa, Chocolate</tspan>
+                  <tspan x="410" dy="16">Curry, Coconut Milk</tspan>
+                </text>
+              </g>
+
+              <!-- Region 5: PO4 ∩ Na+ -->
+              <g id="svg-region-PO4_NA" class="venn-region-group" onclick="selectVennRegion('PO4_NA')" onmouseenter="hoverVennRegion('PO4_NA')" onmouseleave="hoverVennRegion(null)">
+                <rect x="215" y="318" width="135" height="112" rx="12" fill="transparent" />
+                <text x="278" y="336" text-anchor="middle" fill="#5B21B6" font-size="11" font-weight="700">
+                  <tspan x="278" dy="0">Processed Meats</tspan>
+                  <tspan x="278" dy="16">Ham, Sausage</tspan>
+                  <tspan x="278" dy="16">Nuggets, Otah</tspan>
+                  <tspan x="278" dy="16">Fishball, Fish Cake</tspan>
+                  <tspan x="278" dy="16">RTE Meals, Fast Food</tspan>
+                </text>
+              </g>
+
+              <!-- Region 6: K+ ∩ Na+ -->
+              <g id="svg-region-K_NA" class="venn-region-group" onclick="selectVennRegion('K_NA')" onmouseenter="hoverVennRegion('K_NA')" onmouseleave="hoverVennRegion(null)">
+                <rect x="470" y="325" width="135" height="100" rx="12" fill="transparent" />
+                <text x="542" y="348" text-anchor="middle" fill="#065F46" font-size="11" font-weight="700">
+                  <tspan x="542" dy="0">Soup Broths</tspan>
+                  <tspan x="542" dy="17">KCl Salt Substitutes</tspan>
+                  <tspan x="542" dy="17">Tomato Paste</tspan>
+                  <tspan x="542" dy="17">Bouillon Cubes</tspan>
+                </text>
+              </g>
+
+              <!-- Region 7: All Three -->
+              <g id="svg-region-ALL_THREE" class="venn-region-group" onclick="selectVennRegion('ALL_THREE')" onmouseenter="hoverVennRegion('ALL_THREE')" onmouseleave="hoverVennRegion(null)">
+                <circle cx="410" cy="306" r="56" fill="#0F172A" fill-opacity="0.9" stroke="#FFFFFF" stroke-width="2.5" />
+                <text x="410" y="292" text-anchor="middle" fill="#F8FAFC" font-size="10.5" font-weight="800" letter-spacing="0.05em">
+                  <tspan x="410" dy="0">ALL THREE</tspan>
+                  <tspan x="410" dy="17" fill="#A5B4FC" font-size="11.5">Ikan Bilis</tspan>
+                  <tspan x="410" dy="16" fill="#FCD34D" font-size="11.5">Steamboat Broth</tspan>
+                </text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 7-Region Keyword Summary Grid -->
+        <div>
+          <div class="venn-cards-header">
+            <span class="section-eyebrow" style="margin-bottom: 0;">7 Venn Keyword Regions</span>
+            <span id="venn-active-badge" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Viewing: All 7 Regions</span>
+          </div>
+          <div id="venn-cards-container" class="venn-cards-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =======================================================================
+       FOOTER
+       ======================================================================= -->
+  <footer>
+    <div class="container footer-inner">
+      <div><strong style="color: var(--text-primary);">CKD Renal FFQ Matrix</strong> · Clinical Reference &amp; Active Recall</div>
+      <div>Phosphate (PO₄) · Potassium (K⁺) · Sodium (Na⁺)</div>
+    </div>
+  </footer>
+
+  <!-- =======================================================================
+       JAVASCRIPT DATA & INTERACTIVE CONTROLLERS
+       ======================================================================= -->
+  <script>
+    /**
+     * Each cell stores an array of subsection objects: { tier?: 'High K' | 'Med K' | 'Low K', label?: string, items: string }
+     * Every object in the array renders as its own dedicated block line (.sub-line) starting flush on a new line.
+     */
+    const FFQ_VARIANTS = {
+      A: {
+        label: 'Variant A · 14-Row Union Spine',
+        rows: [
+          {
+            id: 'A1',
+            category: '1. Milk & Dairy',
+            sub: 'Dairy & Creamers',
+            po4: [{ items: 'Milk, milk powders, cheese, yoghurt, ice cream, 3-in-1 coffee, 3-in-1 tea, creamer, cafe milk coffee' }],
+            k: null,
+            na: null
+          },
+          {
+            id: 'A2',
+            category: '2. Soybean Products',
+            sub: 'Soy & Plant-Based',
+            po4: [{ items: 'Soybean milk, tofu, tau kwa' }],
+            k: [{ items: 'Soybeans, edamame, nut-based milks, plant-based meat substitutes' }],
+            na: null
+          },
+          {
+            id: 'A3',
+            category: '3. Legumes',
+            sub: 'Beans, Peas & Lentils',
+            po4: [{ items: 'Lentils, beans, dhal, chickpeas' }],
+            k: [
+              { tier: 'High K', items: 'Kidney beans, red beans, black beans, baked beans, cooked mung beans, split peas, black-eyed peas, lentils, red bean soup, green bean soup' },
+              { tier: 'Med K', items: 'Frozen green peas, boiled green beans' },
+              { tier: 'Low K', items: 'Canned green peas, towgay, long beans' }
+            ],
+            na: null
+          },
+          {
+            id: 'A4',
+            category: '4. Nuts & Seeds',
+            sub: 'Nuts, Seeds & Pastes',
+            po4: [{ items: 'Nuts, sesame paste, almond paste, chestnut' }],
+            k: [
+              { tier: 'High K', items: 'Nuts, peanuts, almonds, pistachios, cashews, sunflower seeds, chia seeds, peanut butter, tahini' }
+            ],
+            na: null
+          },
+          {
+            id: 'A5',
+            category: '5. Organ Meats',
+            sub: 'Offal & Kway Chap',
+            po4: [{ items: 'Liver, kidney, intestines, kway chap' }],
+            k: null,
+            na: null
+          },
+          {
+            id: 'A6',
+            category: '6. Edible Bones & Dried Fish',
+            sub: 'Small Fish & Bones',
+            po4: [{ items: 'Ikan bilis, sardines, fried whitebait, pork bones, chicken bones' }],
+            k: [{ items: 'Ikan bilis, bone broths' }],
+            na: [{ items: 'Ikan bilis' }]
+          },
+          {
+            id: 'A7',
+            category: '7. Processed Meats & Surimi',
+            sub: 'Cured Meats & Fish Paste',
+            po4: [{ items: 'Nuggets, hot dogs, sausage, ham, fishball, fish cake, otah' }],
+            k: null,
+            na: [{ items: 'Nuggets, hot dogs, sausage, ham, fishball, fish cake, otah, canned food' }]
+          },
+          {
+            id: 'A8',
+            category: '8. Wholegrains vs. Hawker Noodles',
+            sub: 'Grains & Noodles',
+            po4: [{ label: 'Wholegrains', items: 'Oats, brown rice, wholemeal bread' }],
+            k: null,
+            na: [{ label: 'Outside & instant noodles', items: 'Mee sua, yellow mee, mee rebus, mee pok, mee kia, instant noodles' }]
+          },
+          {
+            id: 'A9',
+            category: '9. Vegetables',
+            sub: 'Vegetables & Tubers',
+            po4: null,
+            k: [
+              { tier: 'High K', items: 'Asparagus, boiled bamboo shoots, raw bitter gourd, chye sim, French beans, ladies finger, okra, boiled lotus root, boiled mushrooms, pak-choy, baked potato with skin, pumpkin, spinach, mashed sweet potato, raw tomato, boiled turnips, fresh waterchestnuts, winter squash, yam' },
+              { tier: 'Low K', items: 'Soaked potatoes' }
+            ],
+            na: [{ items: 'Pickled vegetables, canned food' }]
+          },
+          {
+            id: 'A10',
+            category: '10. Fruits & Juices',
+            sub: 'Fresh Fruits, Dried Fruits & Juices',
+            po4: null,
+            k: [
+              { tier: 'High K', label: 'High K Fruits', items: 'Avocado, medium banana, custard apple, dates, durian, dried figs, jackfruit, nectarine, raisins, soursop, raw tamarind' },
+              { tier: 'Med K', label: 'Med K Fruits', items: 'Pisang mas banana, honeydew, small kiwi fruit, mango, medium orange, papaya, fresh pineapple, watermelon' },
+              { tier: 'High K', label: 'High K Juices', items: 'Prune juice, fresh orange juice, tomato juice, vegetable juice' },
+              { tier: 'Med K', label: 'Med K Juices', items: 'Packet 100% pure orange juice, grape juice, grapefruit juice, pineapple juice' },
+              { tier: 'Low K', label: 'Low K Juices', items: 'Apple juice, sugarcane juice' }
+            ],
+            na: null
+          },
+          {
+            id: 'A11',
+            category: '11. Soups, Broths & Gravies',
+            sub: 'Broths & Curry',
+            po4: [{ items: 'Curry gravy, coconut milk, steamboat broth' }],
+            k: [{ items: 'Steamboat broth, bone broths, vegetable soups, soup broths' }],
+            na: [{ items: 'Soup broth, steamboat broth, gravies' }]
+          },
+          {
+            id: 'A12',
+            category: '12. Sauces, Seasonings & Salt Subs',
+            sub: 'Condiments & Seasoning Cubes',
+            po4: null,
+            k: [
+              { label: 'Salt substitutes', items: 'NoSalt, Nu-Salt, LoSalt' },
+              { label: 'Tomato bases & cubes', items: 'Tomato paste, tomato puree, marinara sauce, pasta sauces, salsa, bouillon cubes' }
+            ],
+            na: [{ items: 'Chicken cubes, soy sauce, oyster sauce, tomato sauce, chilli sauce, seasonings' }]
+          },
+          {
+            id: 'A13',
+            category: '13. Beverages (Cola, Malted, Cocoa, Coconut)',
+            sub: 'Soft Drinks, Malted & Brewed Drinks',
+            po4: [
+              { label: 'Cola', items: 'Coca-Cola, Pepsi' },
+              { label: 'Malted & coffee', items: 'Milo, Horlicks, Ovaltine, cafe coffee' }
+            ],
+            k: [
+              { tier: 'High K', items: 'Coconut water, instant cocoa' },
+              { tier: 'Low K', items: 'Brewed coffee, instant coffee, black tea, Chinese tea, Chinese cooling tea with sugarcane' },
+              { label: 'Other Drinks', items: 'Milo, Ovaltine, herbal teas, dark beer, stout beer, instant coffee mixes' }
+            ],
+            na: null
+          },
+          {
+            id: 'A14',
+            category: '14. Chocolate, Local Desserts & TCM',
+            sub: 'Sweets, Desserts & Herbal Items',
+            po4: [{ items: 'Chocolate' }],
+            k: [
+              { label: 'Sweets & desserts', items: 'Cocoa, dark chocolate, molasses, sports electrolyte drinks, bubur cha cha, chng tng' },
+              { label: 'TCM & herbs', items: 'Red dates, wolfberries, TCM decoctions, herbal supplements' }
+            ],
+            na: [{ items: 'Frozen RTE meals, french fries, fast food' }]
+          }
+        ]
+      },
+      B: {
+        label: 'Variant B · 6-Row Meal-Flow Spine',
+        rows: [
+          {
+            id: 'B1',
+            category: '1. Staples & Noodles',
+            sub: 'Grains, Noodles & Tubers',
+            po4: [{ label: 'Wholegrains', items: 'Oats, brown rice, wholemeal bread' }],
+            k: [
+              { tier: 'High K', label: 'High K Tubers', items: 'Baked potato with skin, mashed sweet potato, yam' },
+              { tier: 'Med K', label: 'Med K Tubers', items: 'Boiled potato' },
+              { tier: 'Low K', label: 'Low K Tubers', items: 'Soaked potatoes, boiled corn' }
+            ],
+            na: [{ label: 'Outside & instant noodles', items: 'Mee sua, yellow mee, mee rebus, mee pok, mee kia, instant noodles' }]
+          },
+          {
+            id: 'B2',
+            category: '2. Proteins (Animal, Soy, Dairy, Bones)',
+            sub: 'Dairy, Soy, Organ Meats, Fish & Processed Meats',
+            po4: [
+              { label: 'Dairy', items: 'Milk, milk powders, cheese, yoghurt, ice cream' },
+              { label: 'Soy', items: 'Soy milk, tofu, tau kwa' },
+              { label: 'Organ meats', items: 'Liver, kidney, intestines, kway chap' },
+              { label: 'Bones', items: 'Ikan bilis, sardines, fried whitebait, pork bones, chicken bones' }
+            ],
+            k: [
+              { tier: 'High K', label: 'High K Legumes & Nuts', items: 'Kidney beans, red beans, black beans, baked beans, cooked mung beans, split peas, black-eyed peas, lentils, nuts' },
+              { label: 'Other Soy & Fish', items: 'Soybeans, edamame, ikan bilis' }
+            ],
+            na: [{ label: 'Processed meats & surimi', items: 'Nuggets, hot dogs, sausage, ham, fishball, fish cake, otah, canned food, ikan bilis' }]
+          },
+          {
+            id: 'B3',
+            category: '3. Fruits & Vegetables',
+            sub: 'Meal-Flow Step 3 · Produce',
+            po4: null,
+            k: [
+              { tier: 'High K', label: 'High K Fruits', items: 'Avocado, medium banana, custard apple, dates, durian, dried figs, jackfruit, nectarine, raisins, soursop, raw tamarind' },
+              { tier: 'High K', label: 'High K Vegetables', items: 'Asparagus, boiled bamboo shoots, raw bitter gourd, chye sim, French beans, ladies finger, okra, boiled lotus root, boiled mushrooms, pak-choy, pumpkin, spinach, raw tomato, boiled turnips, fresh waterchestnuts, winter squash' },
+              { tier: 'Med K', label: 'Med K Fruits', items: 'Pisang mas banana, honeydew, small kiwi fruit, mango, medium orange, papaya, fresh pineapple, watermelon' },
+              { tier: 'Med K', label: 'Med K Vegetables', items: 'Broccoli, green cabbage, carrots, celery, dried mushrooms' }
+            ],
+            na: [{ label: 'Preserved produce', items: 'Pickled vegetables, canned food' }]
+          },
+          {
+            id: 'B4',
+            category: '4. Soups, Gravies & Seasonings',
+            sub: 'Broths, Gravies & Condiments',
+            po4: [{ items: 'Curry gravy, coconut milk, steamboat broth' }],
+            k: [
+              { label: 'Broths & tomato bases', items: 'Steamboat broth, bone broths, vegetable soups, vegetable broths, tomato paste, tomato puree, marinara sauce, pasta sauces, salsa, bouillon cubes' },
+              { label: 'Salt substitutes', items: 'NoSalt, Nu-Salt, LoSalt' }
+            ],
+            na: [{ label: 'Sauces & broths', items: 'Chicken cubes, soy sauce, oyster sauce, tomato sauce, chilli sauce, soup broth, steamboat broth, gravies' }]
+          },
+          {
+            id: 'B5',
+            category: '5. Beverages',
+            sub: 'Juices, Soft Drinks, Coffee & Tea',
+            po4: [
+              { label: 'Cola', items: 'Coca-Cola, Pepsi' },
+              { label: 'Malted & coffee', items: 'Milo, Horlicks, Ovaltine, 3-in-1 coffee, 3-in-1 tea, creamer, cafe milk coffee' }
+            ],
+            k: [
+              { tier: 'High K', label: 'High K Drinks', items: 'Coconut water, instant cocoa, prune juice, fresh orange juice, tomato juice, vegetable juice' },
+              { tier: 'Med K', label: 'Med K Drinks', items: 'Packet 100% pure orange juice, grape juice, grapefruit juice, pineapple juice' },
+              { tier: 'Low K', label: 'Low K Drinks', items: 'Apple juice, sugarcane juice, brewed coffee, instant coffee, black tea, Chinese tea, Chinese cooling tea with sugarcane' },
+              { label: 'Other Drinks', items: 'Milo, Ovaltine, herbal teas, dark beer, stout beer, instant coffee mixes' }
+            ],
+            na: null
+          },
+          {
+            id: 'B6',
+            category: '6. Snacks, Nuts, Desserts & TCM',
+            sub: 'Nuts, Chocolate, Desserts & Herbs',
+            po4: [
+              { label: 'Nuts & seeds', items: 'Nuts, sesame paste, almond paste, chestnut' },
+              { label: 'Sweets', items: 'Chocolate' }
+            ],
+            k: [
+              { label: 'Nuts & seeds', items: 'Nuts, sunflower seeds, chia seeds, peanut butter, tahini' },
+              { label: 'Sweets & coconut', items: 'Fresh coconut flesh, cocoa, dark chocolate, molasses, sports electrolyte drinks, bubur cha cha, red bean soup, green bean soup, chng tng' },
+              { label: 'TCM', items: 'Herbal decoctions, red dates, wolfberries' }
+            ],
+            na: [{ items: 'Frozen RTE meals, french fries, fast food' }]
+          }
+        ]
+      },
+      C: {
+        label: 'Variant C · 3-Tier Mechanism Spine',
+        rows: [
+          {
+            id: 'C1',
+            category: 'Tier 1: Inherently High Whole Foods',
+            sub: 'Whole Foods & Fresh Produce',
+            po4: [
+              { label: 'Milk & milk products', items: 'Milk, milk powders, cheese, yoghurt, ice cream' },
+              { label: 'Soy, legumes & nuts', items: 'Tofu, tau kwa, soy milk, lentils, beans, dhal, chickpeas, nuts, sesame paste, almond paste, chestnut' },
+              { label: 'Organ meats & bones', items: 'Liver, kidney, intestines, kway chap, ikan bilis, sardines, fried whitebait, pork bones, chicken bones' },
+              { label: 'Wholegrains', items: 'Oats, brown rice, wholemeal bread' }
+            ],
+            k: [
+              { tier: 'High K', label: 'High K Fruits', items: 'Avocado, medium banana, custard apple, durian, jackfruit, nectarine, soursop, raw tamarind' },
+              { tier: 'Med K', label: 'Med K Fruits', items: 'Pisang mas banana, honeydew, small kiwi fruit, mango, medium orange, papaya, fresh pineapple, watermelon' },
+              { tier: 'High K', label: 'High K Vegetables', items: 'Asparagus, boiled bamboo shoots, raw bitter gourd, chye sim, French beans, ladies finger, okra, boiled lotus root, boiled mushrooms, pak-choy, baked potato with skin, pumpkin, spinach, mashed sweet potato, raw tomato, boiled turnips, fresh waterchestnuts, winter squash, yam' },
+              { label: 'Legumes, nuts & coconut', items: 'Kidney beans, red beans, black beans, baked beans, cooked mung beans, lentils, peas, nuts, seeds, fresh coconut flesh' }
+            ],
+            na: [{ label: 'Natural baseline', items: 'Rice, noodles, meat, fruits, vegetables' }]
+          },
+          {
+            id: 'C2',
+            category: 'Tier 2: Concentrated, Brewed or Extracted',
+            sub: 'Powders, Juices, Dried Items & Broths',
+            po4: [
+              { label: 'Malted & chocolate', items: 'Milo, Horlicks, Ovaltine, chocolate' },
+              { label: 'Coconut & coffee', items: 'Coconut milk, curry gravy, cafe milk coffee' }
+            ],
+            k: [
+              { tier: 'High K', label: 'High K Drinks', items: 'Coconut water, instant cocoa, prune juice, fresh orange juice, tomato juice, vegetable juice' },
+              { tier: 'Med K', label: 'Med K Drinks', items: 'Packet 100% pure orange juice, grape juice, grapefruit juice, pineapple juice' },
+              { tier: 'Low K', label: 'Low K Drinks', items: 'Apple juice, sugarcane juice, brewed coffee, instant coffee, black tea, Chinese tea, Chinese cooling tea with sugarcane' },
+              { label: 'Dried & concentrated', items: 'Dates, dried figs, raisins, molasses, tomato paste, tomato puree, marinara sauce, pasta sauces, salsa' },
+              { label: 'Broths, desserts & TCM', items: 'Steamboat broth, bone broth, vegetable soup, bubur cha cha, red bean soup, green bean soup, chng tng, herbal teas, red dates, wolfberries' }
+            ],
+            na: [{ label: 'Sauces & seasonings', items: 'Chicken cubes, soy sauce, oyster sauce, tomato sauce, chilli sauce, soup broth, steamboat broth, gravies' }]
+          },
+          {
+            id: 'C3',
+            category: 'Tier 3: Processed & Chemical Additives',
+            sub: 'Processed Foods & Salts',
+            po4: [
+              { label: 'Beverages & creamers', items: 'Cola, Coca-Cola, Pepsi, 3-in-1 coffee, 3-in-1 tea, creamer, fortified soy milk' },
+              { label: 'Processed meats & RTE', items: 'Nuggets, hot dogs, sausage, ham, fishball, fish cake, otah, french fries, fast food, frozen RTE meals, instant noodles' }
+            ],
+            k: [
+              { label: 'Salt substitutes', items: 'NoSalt, Nu-Salt, LoSalt' },
+              { label: 'Drinks, cubes & substitutes', items: 'Sports electrolyte drinks, dark beer, stout beer, instant coffee mixes, bouillon cubes, plant-based meat substitutes' }
+            ],
+            na: [
+              { label: 'Preserved & instant', items: 'Pickled vegetables, canned food, instant noodles, frozen RTE meals, french fries, fast food' },
+              { label: 'Processed meats & fish', items: 'Nuggets, hot dogs, sausage, ham, fishball, fish cake, otah, ikan bilis' },
+              { label: 'Hawker noodles', items: 'Mee sua, yellow mee, mee rebus, mee pok, mee kia' }
+            ]
+          }
+        ]
+      }
+    };
+
+    const VENN_REGIONS = [
+      {
+        id: 'PO4_ONLY',
+        title: 'Phosphate Only (PO₄)',
+        pillClass: 'pill-po4',
+        dotClass: 'dot-po4',
+        keywords: [
+          'Dairy', '3-in-1 Drinks', 'Creamer', 'Soymilk', 'Tofu', 'Tau Kwa',
+          'Organ Meats', 'Kway Chap', 'Edible Bones', 'Sardines',
+          'Cola', 'Horlicks', 'Oats', 'Brown Rice', 'Wholemeal'
+        ]
+      },
+      {
+        id: 'K_ONLY',
+        title: 'Potassium Only (K⁺)',
+        pillClass: 'pill-k',
+        dotClass: 'dot-k',
+        keywords: [
+          'High-K Fruits', 'Dried Fruits', 'Dates', 'High-K Vegetables',
+          'Tubers', 'Spinach', 'Juices', 'Coconut Water',
+          'Chng Tng', 'Bubur Cha Cha', 'TCM', 'Red Dates', 'Wolfberries'
+        ]
+      },
+      {
+        id: 'NA_ONLY',
+        title: 'Sodium Only (Na⁺)',
+        pillClass: 'pill-na',
+        dotClass: 'dot-na',
+        keywords: [
+          'Soy Sauce', 'Oyster Sauce', 'Chilli Sauce', 'Tomato Sauce', 'Chicken Cubes',
+          'Mee Sua', 'Yellow Mee', 'Mee Pok', 'Mee Kia', 'Instant Noodles', 'Pickled Veg', 'Canned Veg'
+        ]
+      },
+      {
+        id: 'PO4_K',
+        title: 'Phosphate ∩ Potassium (PO₄ + K⁺)',
+        pillClass: 'pill-k',
+        dotClass: 'dot-k',
+        keywords: [
+          'Legumes', 'Dhal', 'Nuts & Seeds', 'Milo', 'Ovaltine',
+          'Cocoa', 'Chocolate', 'Curry', 'Coconut Milk'
+        ]
+      },
+      {
+        id: 'PO4_NA',
+        title: 'Phosphate ∩ Sodium (PO₄ + Na⁺)',
+        pillClass: 'pill-overlap',
+        dotClass: 'dot-overlap',
+        keywords: [
+          'Processed Meats', 'Ham', 'Sausage', 'Nuggets', 'Otah',
+          'Fishball', 'Fish Cake', 'RTE Meals', 'Fast Food'
+        ]
+      },
+      {
+        id: 'K_NA',
+        title: 'Potassium ∩ Sodium (K⁺ + Na⁺)',
+        pillClass: 'pill-k',
+        dotClass: 'dot-k',
+        keywords: [
+          'Soup Broths', 'KCl Salt Substitutes', 'Tomato Paste', 'Bouillon Cubes'
+        ]
+      },
+      {
+        id: 'ALL_THREE',
+        title: 'All Three (PO₄ ∩ K⁺ ∩ Na⁺)',
+        pillClass: 'pill-overlap',
+        dotClass: 'dot-overlap',
+        keywords: [
+          'Ikan bilis', 'Steamboat broth'
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      mainView: 'table',       // 'table' | 'venn'
+      spine: 'A',              // 'A' | 'B' | 'C'
+      filter: 'ALL',           // 'ALL' | 'PO4' | 'K' | 'NA' | 'OVERLAP'
+      searchQuery: '',
+      quizMode: false,
+      activeVennRegion: 'ALL'
+    };
+
+    // =========================================================================
+    // 3. HELPERS & RENDERERS
+    // =========================================================================
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function highlightText(rawText, searchTerm) {
+      const escaped = escapeHtml(rawText);
+      if (!searchTerm || searchTerm.trim().length === 0) return escaped;
+      const safeQuery = searchTerm.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeQuery})`, 'gi');
+      return escaped.replace(regex, '<mark>$1</mark>');
+    }
+
+    function cellPlainText(sections) {
+      if (!sections || sections.length === 0) return '';
+      return sections.map((s) => `${s.tier || ''} ${s.label || ''} ${s.items}`).join(' ');
+    }
+
+    /**
+     * Renders a cell's subsection array so EVERY subsection begins on a NEW LINE (.sub-line block).
+     */
+    function renderCellSections(sections, searchTerm) {
+      if (!sections || sections.length === 0) {
+        return '<span class="empty-dash">—</span>';
+      }
+
+      const linesHtml = sections
+        .map((sec) => {
+          let prefixHtml = '';
+          if (sec.tier) {
+            const tierClass =
+              sec.tier === 'High K'
+                ? 'tier-high'
+                : sec.tier === 'Med K'
+                ? 'tier-med'
+                : 'tier-low';
+            prefixHtml += `<span class="tier-badge ${tierClass}">${escapeHtml(sec.tier)}</span>`;
+          }
+          if (sec.label) {
+            prefixHtml += `<span class="sub-label">${highlightText(sec.label, searchTerm)}:</span> `;
+          }
+          const itemsHtml = highlightText(sec.items, searchTerm);
+          return `<div class="sub-line">${prefixHtml}${itemsHtml}</div>`;
+        })
+        .join('');
+
+      return `<div class="cell-stack quiz-target" onclick="toggleCellReveal(this)">${linesHtml}</div>`;
+    }
+
+    function renderTable() {
+      const variant = FFQ_VARIANTS[state.spine];
+      const tbody = document.getElementById('ffq-table-body');
+      const emptyState = document.getElementById('empty-state');
+      const summaryText = document.getElementById('table-summary-text');
+      const query = state.searchQuery.trim().toLowerCase();
+
+      const filteredRows = variant.rows.filter((row) => {
+        const hasPO4 = Array.isArray(row.po4) && row.po4.length > 0;
+        const hasK = Array.isArray(row.k) && row.k.length > 0;
+        const hasNA = Array.isArray(row.na) && row.na.length > 0;
+        const activeCount = (hasPO4 ? 1 : 0) + (hasK ? 1 : 0) + (hasNA ? 1 : 0);
+
+        if (state.filter === 'PO4' && !hasPO4) return false;
+        if (state.filter === 'K' && !hasK) return false;
+        if (state.filter === 'NA' && !hasNA) return false;
+        if (state.filter === 'OVERLAP' && activeCount < 2) return false;
+
+        if (query.length > 0) {
+          const hay = `${row.category} ${row.sub} ${cellPlainText(row.po4)} ${cellPlainText(row.k)} ${cellPlainText(row.na)}`.toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+        return true;
+      });
+
+      if (filteredRows.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = filteredRows
+          .map((row) => {
+            const hasPO4 = Array.isArray(row.po4) && row.po4.length > 0;
+            const hasK = Array.isArray(row.k) && row.k.length > 0;
+            const hasNA = Array.isArray(row.na) && row.na.length > 0;
+
+            return `
+              <tr>
+                <td class="cell-cat">
+                  <div class="cat-title">${highlightText(row.category, state.searchQuery)}</div>
+                  <div class="cat-sub">${escapeHtml(row.sub)}</div>
+                  <div class="cat-pills">
+                    ${hasPO4 ? '<span class="mini-pill pill-po4">PO₄</span>' : ''}
+                    ${hasK ? '<span class="mini-pill pill-k">K⁺</span>' : ''}
+                    ${hasNA ? '<span class="mini-pill pill-na">Na⁺</span>' : ''}
+                  </div>
+                </td>
+                <td class="${hasPO4 ? '' : 'cell-empty'}">${renderCellSections(row.po4, state.searchQuery)}</td>
+                <td class="${hasK ? '' : 'cell-empty'}">${renderCellSections(row.k, state.searchQuery)}</td>
+                <td class="${hasNA ? '' : 'cell-empty'}">${renderCellSections(row.na, state.searchQuery)}</td>
+              </tr>
+            `;
+          })
+          .join('');
+      }
+
+      summaryText.innerHTML = `Showing <strong style="color: var(--text-primary);">${filteredRows.length}</strong> of <strong style="color: var(--text-primary);">${variant.rows.length}</strong> rows in <strong style="color: var(--text-primary);">${escapeHtml(variant.label)}</strong>`;
+    }
+
+    function renderVennCards() {
+      const container = document.getElementById('venn-cards-container');
+      const activeBadge = document.getElementById('venn-active-badge');
+      const selected = state.activeVennRegion;
+
+      if (selected === 'ALL') {
+        activeBadge.textContent = 'Viewing: All 7 Regions';
+      } else {
+        const found = VENN_REGIONS.find((r) => r.id === selected);
+        activeBadge.textContent = found ? `Selected: ${found.title}` : 'Viewing: All 7 Regions';
+      }
+
+      container.innerHTML = VENN_REGIONS.map((region) => {
+        const isSelected = selected === region.id;
+        const isDimmed = selected !== 'ALL' && !isSelected;
+
+        return `
+          <div
+            id="card-region-${region.id}"
+            class="venn-card ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}"
+            onclick="selectVennRegion('${region.id}')"
+            onmouseenter="hoverVennRegion('${region.id}')"
+            onmouseleave="hoverVennRegion(null)"
+          >
+            <div class="venn-card-top">
+              <span class="venn-region-badge ${region.pillClass}">
+                <span class="dot ${region.dotClass}"></span>
+                ${escapeHtml(region.title)}
+              </span>
+              <span class="venn-count">${region.keywords.length} keywords</span>
+            </div>
+            <div class="kw-wrap">
+              ${region.keywords.map((kw) => `<span class="kw-chip">${escapeHtml(kw)}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateSvgHighlight(selected);
+    }
+
+    function updateSvgHighlight(regionId) {
+      VENN_REGIONS.forEach((r) => {
+        const el = document.getElementById(`svg-region-${r.id}`);
+        if (!el) return;
+        if (!regionId || regionId === 'ALL') {
+          el.style.opacity = '1';
+        } else {
+          el.style.opacity = r.id === regionId ? '1' : '0.24';
+        }
+      });
+
+      const cPO4 = document.getElementById('circle-PO4');
+      const cK = document.getElementById('circle-K');
+      const cNA = document.getElementById('circle-NA');
+      if (!cPO4 || !cK || !cNA) return;
+
+      const activeSet = new Set();
+      if (!regionId || regionId === 'ALL') {
+        activeSet.add('PO4');
+        activeSet.add('K');
+        activeSet.add('NA');
+      } else {
+        if (regionId.includes('PO4') || regionId === 'ALL_THREE') activeSet.add('PO4');
+        if (regionId.includes('K') || regionId === 'ALL_THREE') activeSet.add('K');
+        if (regionId.includes('NA') || regionId === 'ALL_THREE') activeSet.add('NA');
+      }
+
+      cPO4.setAttribute('fill-opacity', activeSet.has('PO4') ? '0.18' : '0.05');
+      cK.setAttribute('fill-opacity', activeSet.has('K') ? '0.18' : '0.05');
+      cNA.setAttribute('fill-opacity', activeSet.has('NA') ? '0.18' : '0.05');
+    }
+
+    function selectVennRegion(regionId) {
+      if (state.activeVennRegion === regionId && regionId !== 'ALL') {
+        state.activeVennRegion = 'ALL';
+      } else {
+        state.activeVennRegion = regionId;
+      }
+      renderVennCards();
+    }
+
+    function hoverVennRegion(regionId) {
+      if (state.activeVennRegion !== 'ALL') return;
+      updateSvgHighlight(regionId || 'ALL');
+      VENN_REGIONS.forEach((r) => {
+        const card = document.getElementById(`card-region-${r.id}`);
+        if (!card) return;
+        if (!regionId) {
+          card.classList.remove('dimmed');
+        } else if (r.id === regionId) {
+          card.classList.remove('dimmed');
+        } else {
+          card.classList.add('dimmed');
+        }
+      });
+    }
+
+    // =========================================================================
+    // 4. INTERACTION HANDLERS
+    // =========================================================================
+    function switchMainView(view) {
+      state.mainView = view;
+      const viewTable = document.getElementById('view-table');
+      const viewVenn = document.getElementById('view-venn');
+      const btnTable = document.getElementById('btn-view-table');
+      const btnVenn = document.getElementById('btn-view-venn');
+
+      if (view === 'table') {
+        viewTable.classList.remove('hidden');
+        viewVenn.classList.add('hidden');
+        btnTable.classList.add('active');
+        btnVenn.classList.remove('active');
+      } else {
+        viewTable.classList.add('hidden');
+        viewVenn.classList.remove('hidden');
+        btnVenn.classList.add('active');
+        btnTable.classList.remove('active');
+        renderVennCards();
+      }
+    }
+
+    function selectSpine(spineKey) {
+      state.spine = spineKey;
+      ['A', 'B', 'C'].forEach((key) => {
+        const btn = document.getElementById(`spine-btn-${key}`);
+        if (key === spineKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      renderTable();
+    }
+
+    function setFilter(filterKey) {
+      state.filter = filterKey;
+      ['ALL', 'PO4', 'K', 'NA', 'OVERLAP'].forEach((key) => {
+        const pill = document.getElementById(`filter-${key}`);
+        pill.classList.remove(`active-${key}`);
+        if (key === filterKey) {
+          pill.classList.add(`active-${key}`);
+        }
+      });
+      renderTable();
+    }
+
+    function handleSearch(val) {
+      state.searchQuery = val;
+      const clearBtn = document.getElementById('btn-clear-search');
+      if (val && val.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      renderTable();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('search-input');
+      input.value = '';
+      handleSearch('');
+      input.focus();
+    }
+
+    function resetFilters() {
+      clearSearch();
+      setFilter('ALL');
+    }
+
+    function toggleQuizMode() {
+      state.quizMode = !state.quizMode;
+      const table = document.getElementById('ffq-table');
+      const btn = document.getElementById('btn-quiz-toggle');
+      const label = document.getElementById('quiz-label');
+      const hint = document.getElementById('quiz-hint');
+
+      if (state.quizMode) {
+        table.classList.add('quiz-mode');
+        btn.classList.add('active');
+        label.textContent = 'Study / Blur Mode: ON';
+        hint.textContent = 'Hover or click any blurred cell to reveal';
+      } else {
+        table.classList.remove('quiz-mode');
+        btn.classList.remove('active');
+        label.textContent = 'Study / Blur Mode: OFF';
+        hint.textContent = 'Blur cells to actively recall items';
+        document.querySelectorAll('.quiz-target.revealed').forEach((el) => el.classList.remove('revealed'));
+      }
+    }
+
+    function toggleCellReveal(el) {
+      if (!state.quizMode) return;
+      el.classList.toggle('revealed');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTable();
+      renderVennCards();
+    });
+  </script>
+</body>
+</html>
